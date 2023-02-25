@@ -1,5 +1,5 @@
 # 5th_team_project with CNN
-## Detection of Covid-19 & Pheumonia by analyzing Chest X-Ray images (ResNet50)
+## Detection of Covid-19 & Pheumonia by analyzing Chest X-Ray images (ResNet50 and Xception)
 
 ### Problem statement
 - In this case study, we will assume that we work as s Deep Learning Consultant.
@@ -34,7 +34,33 @@ Dropout to prevent overfitting by reducing the number of neurons.
 
 The model has around 25.6 million parameters.
 
-### Conclusion
+
+### Transfer Learning with Xception
+
+source: image from original paper https://arxiv.org/abs/1610.02357
+
+Xception has 3 main parts: Entry flow, Middle flow and Exit flow.
+
+The Entry flow has 2 blocks of convolutional layers followed by a ReLU activation, also we can see the number of filters, filter size and the strides. There are also Separable convolutional layers and Max Pooling layers. If strides not mentioned it means that strides are equal 1 step. And there as Skip connections, where 'Add' is used to merge two tensors. We begin from image size 299x299x3 and after entry flow we get image size of 19x19x728.
+
+The same happens with the Middle and Exit flows.
+
+The difference between Separable convolutional layers and Convolutional layers is in the dimensionality of the filters.
+
+Separable convolution layers are way more advantageous than traditional convolutional layers, both in terms of computation cost as well as memory. The main difference is that in the normal convolution, we are transforming the image multiple times. And every transformation uses up 3x3x3x64 = 1,728 multiplications. In the separable convolution, we only transform the image once — in the depthwise convolution. Then, we take the transformed image and simply elongate it to 64 channels. Without having to transform the image over and over again, we can save up on computational power.
+
+We are going to initialize the Xception model and use weight = 'imagenet'. ImageNet is a large visual database designed for use in visual object recognition software research. It contains over 1 million high-resolution tagged images in approximately 1000 classes. We are going to use its weights to get a base from which we can start training the model.
+Since we are doing transfer learning, we are not going to include the top layers of the Xception model. So include_top = False to exclude the final Dense layer. Replacing the top layer with custom layers allows us to use Xception as a feature extractor in a transfer learning workflow.
+1. Define input_shape = (256, 256, 3)
+2. Add our own layers on the top of Xception:
+3. GlobalAveragePooling2D: designed to replace fully connected layers. It takes the average of each feature map.
+4. Dropout to prevent overfitting by reducing the number of neurons.
+5. 1-fully-connected or 2-fully-connected and 3-fully-connected layers followed by Dense as output layer with activation softmax since this is a multi-class classification problem.
+
+The model has around 22.85 million parameters.
+
+
+### Conclusion for ResNet50
 In our project, we propose a transfer learning-based method for Covid-19, Bacterial Pneumonia, Viral Pneumonia and Normal lungs detection via X-Ray images. The method uses the ResNet50 model architecture and weights pretrained on the popular ImageNet dataset. Modification of the network’s output was made to take the final diagnosis decisions. We unfreezed last 20 layers of ResNet50 and searched for the optimal hyperparameters and network architecture through loops.
 
 The model implemented along with reducing learning rate and tuning hyperparameter proves to be efficient on a large and complex problem of X-Ray image data set.
@@ -57,3 +83,28 @@ The best hyperparameters for transfer learning with ResNet50 in our project were
 - dropout
 
 Further, in the next work, we will test the dataset with Xception network.
+
+
+
+### Conclusion for Xception
+
+I unfreezed last 23 layers of Xception and searched for the optimal hyperparameters and network architecture through loops.
+
+First, we checked performance with 1-fully-connected layer, then with 2-fully-connected layers, with 3-fully-connected layers, and lastly with output layer.
+
+Performances were slightly similar by accuracy score:
+
+- network with output layer, 1-fully connected layers: 82% of accuracy and 7 times wrong,
+- 2- and 3-fully-connected layer: 80% and model were wrong 8 times.
+
+The best hyperparameters for transfer learning with Xception in this project were:
+
+- only output layer or 1 Dense layer
+- GlobalAveragePooling2D
+- SGD and Nadam optimizers
+- callbacks: early stopping & reducing learning rate
+- dropout
+
+The model resulted in higher performance compared to ResNet50 on the same dataset of images which I've done in previous notebook.
+
+To make training of model more stabilized it is needed to have more data. In this dataset we had 133 images per class. So, if train with more images, the results are expected to be satisfactory.
